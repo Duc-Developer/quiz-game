@@ -1,0 +1,45 @@
+name: Scheduled Run
+
+on:
+  schedule:
+    - cron: '0 2 * * 1-5' # Schedule to run daily at midnight UTC
+    timezone: Asia/Ho_Chi_Minh
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Create env file
+        run: |
+          touch .env
+          echo AUTHOR_ID=${{ secrets.AUTHOR_ID }} >> .env
+          echo GOOGLE_SPACE_ID=${{ secrets.GOOGLE_SPACE_ID }} >> .env
+          echo GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }} >> .env
+          echo GOOGLE_TOKEN=${{ secrets.GOOGLE_TOKEN }} >> .env
+          echo QUESTION_ENDPOINT=${{ secrets.QUESTION_ENDPOINT }} >> .env
+          cat .env
+
+      - name: Building...
+        run: npm run build
+      
+      - name: Set up environment variables & run script
+        run: npm run schedule
+        env:
+          AUTHOR_ID: ${{ secrets.AUTHOR_ID }}
+          GOOGLE_SPACE_ID: ${{ secrets.GOOGLE_SPACE_ID }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GOOGLE_TOKEN: ${{ secrets.GOOGLE_TOKEN }}
+          QUESTION_ENDPOINT: ${{ secrets.QUESTION_ENDPOINT }}
