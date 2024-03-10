@@ -29,6 +29,7 @@ jobs:
           echo GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }} >> .env
           echo GOOGLE_TOKEN=${{ secrets.GOOGLE_TOKEN }} >> .env
           echo QUESTION_ENDPOINT=${{ secrets.QUESTION_ENDPOINT }} >> .env
+          echo QUOTE_PREF_ID=${{ secrets.QUOTE_PREF_ID }} >> .env
           cat .env
 
       - name: Building...
@@ -42,3 +43,4 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           GOOGLE_TOKEN: ${{ secrets.GOOGLE_TOKEN }}
           QUESTION_ENDPOINT: ${{ secrets.QUESTION_ENDPOINT }}
+          QUOTE_PREF_ID: ${{ secrets.QUOTE_PREF_ID }}
