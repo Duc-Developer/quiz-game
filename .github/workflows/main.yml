@@ -2,8 +2,7 @@ name: Scheduled Run
 
 on:
   schedule:
-    - cron: '0 2 * * 1-5' # Schedule to run daily at midnight UTC
-    timezone: Asia/Ho_Chi_Minh
+    - cron: '0 2 * * 1-5'
 
 jobs:
   run-script:
