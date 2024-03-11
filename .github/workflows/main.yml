@@ -1,8 +1,10 @@
 name: Scheduled Run
 
 on:
+  pull_request:
+    types: [synchronize, opened, reopened, edited]
   schedule:
-    - cron: '08 16 * * 1-5'
+    - cron: '13 16 * * 1-5'
 
 jobs:
   run-script:
