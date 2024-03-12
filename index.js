@@ -83,14 +83,19 @@ async function generateQuestion() {
         const data = await response.json();
         if (data.response_code !== 0) throw new Error('API fail!');
 
-        const title = sanitizeHtml(data.results[0].category);
+        const categoryTitle = sanitizeHtml(data.results[0].category);
         const question = sanitizeHtml(data.results[0].question);
         const answer = sanitizeHtml(data.results[0].correct_answer);
         const countDown = msToTime(answerCountDown);
 
         //<users/${authorId}> use it if u wanna mention on chat
-        const questionContent = `------------------ Good morning ---------------------\n+ Category: ${title}\n+ Difficulty: ${stars}\n${question}\n------------------- Today's Question ----------------------\nThe answer will be returned after ${countDown}`;
-        sendMessageToGoogleChat(questionContent, 'question', '', answer);
+        const questionObj = {
+            category: categoryTitle,
+            question,
+            countDown,
+            difficulty: stars
+        };
+        sendMessageToGoogleChat(questionObj, 'question', '', answer);
     } catch (error) {
         process.exit(1);
     }
@@ -114,72 +119,86 @@ function generateUniqueId() {
 
 async function randomQuote() {
     return fetch(quoteEndpoint)
-    .then(function(response) {
-      return response.json();
-    })
+        .then(function (response) {
+            return response.json();
+        })
 }
 
-async function sendMessageToGoogleChat(message, type, threadId, answer) {
+async function sendMessageToGoogleChat(messages, type, threadId, answer) {
     try {
         let webhookUrl = `https://chat.googleapis.com/v1/spaces/${spaceId}/messages?key=${apiKey}&token=${token}`;
-        const requestBody = {
-            text: message
-        };
+        const requestBody = {};
 
         if (type === 'question') {
-            const cardHeader = {
-                title: 'AUTO_BOT',
-                subtitle: "v1.0.1",
-                imageType: "CIRCLE",
-                imageUrl: botAvatar,
-                imageAltText: "Avatar for AUTO_BOT"
-            };
-
+            const { category, question, countDown, difficulty } = messages;
             const quote = await randomQuote();
-            const avatarWidget = {
-                textParagraph: { text: `Quote by ${sanitizeHtml(quote.widgetPrefs.account)}` },
-            };
-
-            const avatarImageWidget = {
-                image: { imageUrl: sanitizeHtml(quote.imageSrc) },
-            };
-
-            const infoWidget = {
-                decoratedText: {
-                  startIcon: {
-                    knownIcon: 'STAR'
-                  },
-                  text: `<a color=\"#f0a858\" href=\"${myGithub}\" target=\"_blank\">Contribute with me</a>`
-                }
-              }
-
-              const authorWidget = {
-                decoratedText: {
-                  startIcon: {
-                    knownIcon: 'PERSON'
-                  },
-                  text: `<font color=\"#f0a858\">ductt2@vmogroup.com</font>`
-                }
-              }
-
-            const avatarSection = {
-                widgets: [
-                    avatarWidget,
-                    avatarImageWidget,
-                    infoWidget,
-                    authorWidget
+            const cardContent = {
+                "header": {
+                    "title": "AUTO_BOT",
+                    "subtitle": "v1.0.1",
+                    "imageUrl": botAvatar,
+                    "imageType": "CIRCLE"
+                },
+                "sections": [
+                    {
+                        "header": "Good morning Everyone!",
+                        "collapsible": true,
+                        "uncollapsibleWidgetsCount": 3,
+                        "widgets": [
+                            {
+                                "textParagraph": {
+                                    "text": question
+                                }
+                            },
+                            {
+                                "divider": {}
+                            },
+                            {
+                                "image": {
+                                    "imageUrl": sanitizeHtml(quote.imageSrc),
+                                    "altText": "Nature"
+                                }
+                            },
+                            {
+                                "decoratedText": {
+                                    "icon": {
+                                        "knownIcon": "BOOKMARK"
+                                    },
+                                    "topLabel": `Category: ${category}`,
+                                    "text": `Difficulty: ${difficulty}`,
+                                    "bottomLabel": `The answer will be returned after ${countDown}`
+                                }
+                            },
+                            {
+                                "decoratedText": {
+                                    "startIcon": {
+                                        "knownIcon": "STAR"
+                                    },
+                                    "text": `<a color=\"#f0a858\" href=\"${myGithub}\" target=\"_blank\">Contribute with me</a>`,
+                                }
+                            },
+                            {
+                                "decoratedText": {
+                                    "startIcon": {
+                                        "knownIcon": "PERSON"
+                                    },
+                                    "text": `<font color=\"#f0a858\">ductt2@vmogroup.com</font>`,
+                                }
+                            }
+                        ]
+                    }
                 ]
-            };
-
-              const cardId = generateUniqueId();
+            }
             requestBody.cardsV2 = [{
-                cardId: cardId,
+                cardId: generateUniqueId(),
                 card: {
                     name: 'Avatar Card',
-                    header: cardHeader,
-                    sections: [avatarSection]
+                    ...cardContent
                 }
             }];
+            requestBody.text = '';
+        } else {
+            requestBody.text = messages;
         }
 
         if (threadId) {
@@ -201,9 +220,9 @@ async function sendMessageToGoogleChat(message, type, threadId, answer) {
         if (type === 'question') {
             const data = await response.json();
             const threadKey = data.thread.name;
-            setTimeout(() => {
-                sendMessageToGoogleChat(`Answer of this question is:\n${answer}`, 'answer', threadKey);
-            }, answerCountDown);
+            // setTimeout(() => {
+            //     sendMessageToGoogleChat(`Answer of this question is:\n${answer}`, 'answer', threadKey);
+            // }, answerCountDown);
         }
         if (type === 'question') {
             console.log('Question sent successfully to Google Chat');
